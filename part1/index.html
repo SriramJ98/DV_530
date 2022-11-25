@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="./d3.js"></script>
+    <script src="https://d3js.org/topojson.v1.min.js"></script>
+    <title>MA Map</title>
+    <style>
+        #tooltip {
+            position: absolute;
+            opacity: 0;
+            top: 0;
+            left: 0;
+            width: auto;
+            padding: 10px;
+            background: rgb(175, 219, 14) ;
+            font-family: sans-serif;
+            font-size: medium;
+            border-radius: 2px;
+            line-height: 1;
+        }
+        
+        path {
+            stroke-width: .8px;
+            stroke: red;
+        }
+        
+        path:hover {
+            opacity: .6;
+            stroke: rgb(46, 13, 196);
+            stroke-width: 4px;
+            fill:rgb(147, 114, 237);
+        }
+        #Container{
+            display: flex;
+            height: 100%;
+            justify-content: center;
+            align-items: center;
+        }
+        .title {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: sans-serif;
+            margin-top: 10px;
+        }
+        .myname{
+            justify-content: center;
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+            font-family: sans-serif;
+        }
+        .center {
+            margin: auto;
+            width: 50%;
+            padding: 10px;
+            border: 3px solid rgb(202, 46, 142);
+                }
+        #SumSquare{
+            text-align: right;
+        }
+        #CountyName{
+            text-align: right;
+        }
+        #population{
+            text-align: right;
+        }
+        #populationSumSquare{
+            text-align: right;
+            justify-content: right;
+        }
+        #GiniIndex{
+            text-align: right;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="tooltip"></div>
+    <div class="title"><h1>Major Assignment Part 2</h1></div>
+    <div class="myname"><h3>Sriram</h3></div>
+    <div id="CountyName">
+    </div>
+    <div id="GiniIndex"></div>
+    <div id="SumSquare"></div>
+    <div id="population"></div>
+    <div id="populationSumSquare"></div>
+    <div id="Container">
+    </div>
+    <script>
+        /*-------------------------------------------------------*/
+        /*------------------- Window setting --------------------*/
+        /*-------------------------------------------------------*/
+        // dimension of the page
+        const window_dims = {
+            width: window.innerWidth/2,
+            height: window.innerHeight/2
+        };
+        const margin = window_dims.width * .05
+        /*-------------------------------------------------------*/
+        /*-----------------parallel load data--------------------*/
+        /*-------------------------------------------------------*/
+        // a topojson file containing population of each town in different years
+        const MA_counties = "./towns.topojson"
+            // gini index per county
+        const gini_index = "./gini_index.csv"
+        // open both files
+        Promise.all([
+            d3.json(MA_counties),
+            d3.csv(gini_index)
+        ]).then(data => {
+            // topology data
+            // gini index data
+            // gini index in 2010
+            let gini =d3.group(data[1].filter(d=>d.year==="2010"),d=>d.FIPS_CO.slice(-5))
+            //gini = (Object.fromEntries(gini)) // for simplicity convert it to json object
+
+            //giniyear_county =  d3.group(...giniyear,d=>d.FIPS_CO)
+            //console.log(giniyear)
+            /*-------------------------------------------------------*/
+            /*-----------------Topojson data handling----------------*/
+            /*-------------------------------------------------------*/
+            // if topojson file is imported we need to 
+            // convert topology data to geojson
+            const topo_data = data[0];
+            const geojson = topojson.feature(topo_data, topo_data.objects.ma);
+            // see the feature properties in the console.
+            //console.table(geojson.features.map(d=>d.properties.SUM_ACRES))
+            //// See SUM_ACRES
+            //console.table(geojson.features.map(d=>d.properties.SUM_SQUARE))
+            //// extra info: Check correctness of data:
+            console.log(geojson.features.filter(d=>d.properties.TOWN==="GRANVILLE")[0].properties.SUM_SQUARE) /* result=43.113 */
+            //https://en.wikipedia.org/wiki/Granville,_Massachusetts  Granville = 43 miles
+
+            /*-------------------------------------------------------*/
+            /*----------------------Projections----------------------*/
+            /*-------------------------------------------------------*/
+            const projections = [
+                d3.geoAzimuthalEqualArea(), //Azimuthal projections project the sphere directly onto a plane.
+                d3.geoAlbersUsa(), // USA conic projection
+                d3.geoAlbers(), // equal-area conic projection
+                d3.geoMercator(), // cylindrical projection
+                d3.geoNaturalEarth1(), // pseudocylindrical projection designed by Tom Patterson
+                d3.geoEqualEarth(), // Equal Earth projection, by Bojan Šavrič et al., 2018.
+                d3.geoConicEqualArea(), //equal-area conic projection
+                d3.geoEquirectangular(), //Cylindrical Projections
+                d3.geoOrthographic()
+            ]
+
+            /*-------------------------------------------------------*/
+            /*----------------geoPath generator----------------------*/
+            /*-------------------------------------------------------*/
+
+            const geoPath_generator = d3.geoPath()
+                .projection(projections[3].fitSize([window_dims.width - margin, window_dims.height - margin], geojson))
+
+            /*-------------------------------------------------------*/
+            /*----------------------Color Scaling--------------------*/
+            /*-------------------------------------------------------*/
+            ////https://observablehq.com/@d3/working-with-color
+            var colorInterpolator = d3.interpolateRgbBasis(["grey", "black"])
+
+            // if the data is scaled using linear scale
+            let linearScale = d3.scaleLinear()
+                .domain(d3.extent(geojson.features, (d) => {
+                    return d['properties']['POP2010']/d['properties']['SUM_SQUARE']
+                    
+                }))
+            
+            // gini index scale linear
+
+            let linearScaleGiniIndex = d3.scaleLinear()
+                .domain(d3.extent([...gini],d=>d[1][0].Estimate_Gini_Index))
+
+            /*-------------------------------------------------------*/
+            /*---------------------- Tooltip ------------------------*/
+            /*-------------------------------------------------------*/
+            const tooltip = d3.select("#tooltip");
+            const CountyName = d3.select("#CountyName");
+            const SumSquare = d3.select("#SumSquare");
+            const population = d3.select("#population");
+            const GiniIndex = d3.select("#GiniIndex");
+            const populationSumSquare = d3.select("#populationSumSquare");
+
+
+            /*--------------------------------------------------------*/
+            /*----------------- channelling marks --------------------*/
+            /*--------------------------------------------------------*/
+
+            // Append an SVG element to body, then append a path for the boundaries
+            let svg = d3.select("#Container").append("svg")
+                .attr("viewBox",`0 0 ${window_dims.width} ${window_dims.height}`)
+                .attr("width", "50vw")
+                .attr("height", "40vh")
+
+            svg.selectAll("path")
+                .data(geojson.features)
+                .enter()
+                .append("path")
+                .attr("d", d => geoPath_generator(d))
+                .attr("fill", d => colorInterpolator(linearScale(d['properties']['POP2010']/d['properties']['SUM_SQUARE'])))
+
+                //.attr("fill", d =>{
+                    //return colorInterpolator(linearScaleGiniIndex(gini.get(d.properties.FIPS_STCO.toString())[0]['Estimate_Gini_Index']));
+                //})
+
+                .on("mouseenter", (m, d) => {
+                    console.log(d['properties'])
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", .9)
+                    tooltip.html(d['properties']['TOWN'])
+                        .style("left", m.clientX + "px")
+                        .style("top", m.clientY + "px")
+                    CountyName.html(d['properties']['TOWN'])
+                    GiniIndex.html(gini.get(d.properties.FIPS_STCO.toString())[0]['Estimate_Gini_Index'])
+                    SumSquare.html(d['properties']['SUM_SQUARE'])
+                    population.html(d['properties']['POP2010'])
+                    populationSumSquare.html(d['properties']['POP2010']/d['properties']['SUM_SQUARE'])
+
+                })
+                .on("mousemove", (m, d) => {
+                    tooltip.style("opacity", .9)
+                })
+                .on("mouseout", (m, d) => {
+                    tooltip.transition()
+                        .duration(3000)
+                        .style("opacity", 0),
+                    CountyName.transition()
+                        .duration(2000)
+                        .style("opacity", 0),
+                    GiniIndex.transition()
+                        .duration(2000)
+                        .style("opacity", 0)
+                    SumSquare.transition()
+                        .duration(2000)
+                        .style("opacity", 0)
+                    population.transition()
+                        .duration(2000)
+                        .style("opacity", 0) 
+                    populationSumSquare.transition()
+                        .duration(2000)
+                        .style("opacity", 0)
+                })
+        })
+    </script>
+</body>
+</html>

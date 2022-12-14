@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<style>
+body  {
+  background-image: url("Images/Netflix-background.jpg");
+}
+        h1   {color:white;font-size:40px;}
+        .button {
+        border: black;
+        color: rgb(32, 34, 32);
+        padding: 16px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        transition-duration: 0.4s;
+        cursor: pointer;
+}
+.button1 {
+          color: black;
+          border: 2px solid black;
+          width: 300px;
+          height: 40px;}
+.button1:hover {
+  background-color: rgb(90, 5, 5);
+  color: white;
+}
+.button2 {
+  color: black;
+  border: 2px solid black;
+  width: 300px;
+  height: 40px;}
+}
+
+.button2:hover {
+  background-color: rgb(90, 5, 5);
+  color: white;
+} 
+.button3 {
+  color: black;;
+  border: 2px solid black;
+  width: 300px;
+  height: 40px;}
+} 
+.button3:hover {
+  background-color: rgb(90, 5, 5);
+  color: white;
+}
+.button4 {
+  color: black;;
+  border: 2px solid black;
+  width: 300px;
+  height: 40px;}
+} 
+.button4:hover {
+  background-color: rgb(90, 5, 5);
+  color: white;
+}
+#over img {
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+}
+* {
+  box-sizing: border-box;
+}
+
+.row {
+  display: flex;
+}
+
+/* Create three equal columns that sits next to each other */
+.column {
+  flex: 25%;
+  padding: 5px;
+
+}
+.row1 {
+  display: flex;
+}
+
+/* Create three equal columns that sits next to each other */
+.column1 {
+  flex: 25%;
+  padding: 5px;
+
+}
+img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+    </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <link rel="stylesheet" href="./libs/css/bootstrap.min.css">
+    <script src="./libs/js/bootstrap.bundle.min.js"></script>
+    <script src="./libs/js/d3.min.js"></script>
+    <script src="./libs/js/d3_topo.min.js"></script>
+    <script src="./libs/js/colorlegend.js"></script>
+
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <div class="row">
+        <div class="column">
+            <img src="Images/Netflix-logo-red-black-png.png" alt = "netflix Netflix-logo" class= center style="width:25%">
+          </div>
+    </div>
+    <h1 style="text-align:center;" >What do you want to know?</h1>
+    <div class="row">
+        <div class="column">
+          <img src="Images/Netflix-avatar1.png" alt="geospatial_netflix" style="width: 35%">
+        </div>
+        <div class="column">
+          <img src="Images/Netflix-avatar2.jpg" alt="time-series-analysis" style="width:35%">
+        </div>
+        <div class="column">
+          <img src="Images/Netflix-avatar3.webp" alt="ForceDirectedGraph" style="width:35%">
+        </div>
+        <div class="column">
+          <img src="Images/Netflix-avatar4.jpg" alt="bargraph" style="width:35%">
+        </div>
+    </div>
+    <div class="row1">
+        <div class="column1">
+                            <a class="nav-link" href="geospatial.html"><button class="button button1">
+                                Geospatial Graph</button>
+                            </a>
+                            <a class="nav-link " href="time-series-analysis.html"><button class="button button2">
+                                Time series analysis</button>
+                            </a>
+                            <a class="nav-link " href="ForceDirectedGraph.html"><button class="button button3">
+                                Force Directed Graph</button>
+                            </a>
+                            <a class="nav-link " href="bargraph.html"><button class="button button4">
+                              Subscription Prices Countrywise</button>
+                          </a>
+            </nav>
+        </div>
+    </div>
+    <div id="tooltip"></div>
+</body>

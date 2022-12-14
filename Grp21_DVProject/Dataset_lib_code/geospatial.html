@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Netflix Map</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://d3js.org/topojson.v2.min.js"></script>
+    <style>
+      .tooltipData {
+        font-size: small;
+        font-family: serif;
+      }
+      #caption {
+        margin-left: 450px;
+        padding-top: 1%;
+        padding-bottom: 1%;
+        padding-left: 4%;
+        font-family: serif;
+        font-size: 20pt;
+      }
+      #tooltip {
+        opacity: 0;
+        background-color: antiquewhite;
+        position: absolute;
+        padding: 10px;
+        width: 150px;
+        height: 40px;
+        border-radius: 10px;
+      }
+      #legend {
+        margin: 50px;
+      }
+      #nav {
+        background-color: black;
+        display: block;
+        padding: 10px;
+        border-radius: 10px;
+      }
+      #link {
+        color: black;
+        text-decoration: none;
+        margin-right: 20px;
+      }
+      <style>
+* {
+  box-sizing: border-box;
+}
+
+.column {
+  float: left;
+  width: 33.33%;
+  padding: 5px;
+}
+
+/* Clearfix (clear floats) */
+.row::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+    </style>
+  </head>
+  <!-- style="margin-left: 250px; margin-top: 80px" -->
+  <body>
+    <div id="caption">Content Produced By Each Country</div>
+    <div id="container"></div>
+    <div id="tooltip"></div>
+    <script>
+      const width = 900;
+      const height = 600;
+      const svg = d3
+        .select("body")
+        .append("svg")
+        .attr("width", width + 300)
+        .attr("height", height);
+      const projection = d3
+        .geoMercator()
+        .scale(140)
+        .translate([width / 1.4, height / 1.4]);
+
+      const path = d3.geoPath(projection);
+      const g = svg.append("g");
+
+      let geospatial_netflix = "./Data/geospatial_netflix_country.csv";
+
+      let geojson =
+        "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+      Promise.all(
+        [d3.json(geojson), d3.csv(geospatial_netflix)],
+        d3.autoType()
+      ).then(main);
+
+      function main(data) {
+        const countries = topojson.feature(data[0], data[0].objects.countries);
+        let country_data = d3.group(data[1], function (d) {
+          return d.Country;
+        });
+
+        let count_extent = d3.extent(data[1], function (d) {
+          return +d.Count;
+        });
+        count_extent[0] = 1;
+
+        let colorScale = d3
+          .scaleLog()
+          .domain(count_extent)
+          .range(["#221f1f", "#e50914"])
+          .interpolate(d3.interpolateRgb.gamma(1));
+
+        g.selectAll("path")
+          .data(countries.features)
+          .enter()
+          .append("path")
+          .attr("class", "country")
+          .attr("d", path)
+          .attr("fill", "white")
+          .on("mousemove", function (mouseData, d) {
+            d3.select("#tooltip")
+              .style("opacity", 0.8)
+              .style("left", (mouseData.clientX + 10).toString() + "px")
+              .style("top", (mouseData.clientY + 10).toString() + "px")
+              .html(
+                "<div class='tooltipData'>Content: " +
+                  country_data.get(d.properties.name)[0].Count +
+                  "</div>" +
+                  "<div class='tooltipData'>Country: " +
+                  country_data.get(d.properties.name)[0].Country +
+                  "</div>" +
+                  "<div class='tooltipData'></div>"
+              );
+          })
+          .transition()
+          .delay(function (d, i) {
+            return i * 2;
+          })
+          .duration(1500)
+          .style("fill", function (d) {
+            try {
+              if (country_data.get(d.properties.name) != undefined) {
+                return colorScale(
+                  parseInt(country_data.get(d.properties.name)[0].Count)
+                );
+              } else {
+                return "#221f1f";
+              }
+            } catch (error) {}
+          });
+
+        svg.call(d3.zoom().scaleExtent([1, 8]).on("zoom", zoomed));
+
+        function zoomed({ transform }) {
+          g.attr("transform", transform);
+        }
+      }
+    </script>
+    <img id="legend" src="./Images/legend.jpg" alt="legend" />
+    <nav id="nav">
+      <a href="homepage.html"><button class="button button1">Back to Main Page</button></a>
+  </nav>
+  </body>
+</html>
